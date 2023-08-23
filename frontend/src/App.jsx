@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import io from "socket.io-client"
-
+import styles from "./App.module.css"
 const socket = io("/")
 
 
@@ -12,39 +12,42 @@ export default function App() {
 	
 	const handleSubmit = (e) =>{
 		e.preventDefault()
-		getOwnMessage(message)
+
+		const newMessage = {
+			body:message,
+			from: "Me"
+		}
+
+		setMessages([...messages, newMessage])
 		socket.emit("message", message)
 	}
 	
 	useEffect(()=>{
-		socket.on("message-broadcast", message =>{
-			console.log(message)
-			receiveMessage(message)
-		})
+		socket.on("message-broadcast", receiveMessage)
+		return () => {
+			socket.off("message-broadcast", receiveMessage)
+		}
 	},[])
-
-	const getOwnMessage = (message) =>{
-		setMessages(state => [...state, message])
-	}
 	
 	const receiveMessage = (message) =>{
 		setMessages(state => [...state, message])
 	}
 	
 	return (
-		<div>
-		<form onSubmit={handleSubmit}>
+		<div className={styles.app}>
+		<form onSubmit={handleSubmit} className={styles.form}>
 			<input
 			onChange={(e) => setMessage(e.target.value)}
 			type="text" name="message" placeholder="Write your message" />
 			<button>Send</button>
 		</form>
 
-		<ul>
+		<ul className={styles.chat}>
 			{
 				messages.map((message, index) =>(
-					<li key={index}>
-						{message}
+					<li className={message.from === "Me" ? styles.messageOwner : styles.message} key={index}>
+						<h3>{message.from}</h3>
+						<p>{message.body}</p>
 					</li>
 				))
 			}
